@@ -1,0 +1,3 @@
+option(PLATFORM "Bulild platform either Desktop or Web" "Desktop")
+option(STATIC_RAYLIB "Link with raylib statically" NO)
+option(RAYLIB_STATIC_INSTALL "Raylib installation direcotry" "")
