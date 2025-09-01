@@ -65,13 +65,30 @@ target_link_libraries(bounce PRIVATE raylib)
 target_link_libraries(bounce PRIVATE -lm)
 target_include_directories(bounce PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/postfix.js
+)
+set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shell.html
+)
+
 target_compile_options(bounce
     PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
 )
+if(PLATFORM STREQUAL "Web")
+    target_compile_definitions(bounce
+        PRIVATE -DPLATFORM_WEB
+    )
+endif()
 
 if (${PLATFORM} STREQUAL "Web")
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html") # Tell Emscripten to build an example.html file.
+    set_target_properties(bounce PROPERTIES SUFFIX ".html")
     set(CMAKE_EXE_LINKER_FLAGS
-        "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s GL_ENABLE_GET_PROC_ADDRESS=1")
+        "${CMAKE_EXE_LINKER_FLAGS} -s GL_ENABLE_GET_PROC_ADDRESS=1 -s USE_GLFW=3 -s ASYNCIFY -s TOTAL_STACK=64MB -s INITIAL_MEMORY=128MB -DPLATFORM_WEB --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/shell.html --post-js ${CMAKE_CURRENT_SOURCE_DIR}/postfix.js"
+    )
 endif()

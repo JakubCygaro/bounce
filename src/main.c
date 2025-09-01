@@ -8,6 +8,10 @@
 #include "ball.h"
 #include <raymath.h>
 
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
+
 #define SPEED 2.5f
 #define SRC_WIDTH 600
 #define SRC_HEIGHT 600
@@ -22,6 +26,8 @@
 static Ball balls[MAX_BALLS] = { 0 };
 static size_t ball_count = 0;
 static double delta_t = 0;
+static double current_frame_time = 0;
+static double last_frame_time = 0;
 static float ball_radius = 5.0;
 
 bool collision(Ball* a, Ball* b){
@@ -156,19 +162,25 @@ void draw() {
     EndDrawing();
 }
 
+void update_draw_frame(){
+    current_frame_time = GetTime();
+    update();
+    draw();
+    delta_t = current_frame_time - last_frame_time;
+    last_frame_time = current_frame_time;
+}
+
 int main(void) {
     InitWindow(SRC_WIDTH, SRC_HEIGHT, "Bounce");
+    balls[ball_count++] = ball_new(10, RED, (Vector2){ 100, 100 });
     SetTargetFPS(TARGET_FPS);
-    double current_frame_time = 0;
-    double last_frame_time = 0;
-
+#if defined(PLATFORM_WEB)
+    emscripten_set_main_loop(update_draw_frame, 0, 1);
+#else
     while(!WindowShouldClose()){
-        current_frame_time = GetTime();
-        draw();
-        update();
-        delta_t = current_frame_time - last_frame_time;
-        last_frame_time = current_frame_time;
+        update_draw_frame();
     }
+#endif
     CloseWindow();
     return 0;
 }
