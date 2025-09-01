@@ -8,6 +8,7 @@ typedef struct _Ball {
     Color color;
     Vector2 position;
     Vector2 velocity;
+    Vector2 acceleration;
 } Ball;
 
 Ball ball_new(float radius, Color color, Vector2 pos);

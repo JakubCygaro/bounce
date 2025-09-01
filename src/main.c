@@ -32,7 +32,7 @@ static float ball_radius = 5.0;
 
 bool collision(Ball* a, Ball* b){
     double dist = sqrt(pow(a->position.x - b->position.x, 2.0) + pow(a->position.y - b->position.y, 2.0));
-    return dist <= (a->radius + b->radius);
+    return dist < (a->radius + b->radius);
 }
 
 Vector2 calculate_velocity_after_collision(Ball* one, Ball* two){
@@ -109,42 +109,48 @@ bool check_edge(Ball* ball){
 
 void update() {
     input();
-    // bool collisions_happened;
-    // bool collision_passsed = false;
-    // do{
-    //     collisions_happened = false;
-        for(size_t i = 0; i < ball_count; i++){
-            Ball* a = &balls[i];
-            // collision with other balls
-            for(size_t j = i + 1; j < ball_count; j++){
-                Ball* b = &balls[j];
-                if(collision(a, b)){
-                    Vector2 direction = Vector2Subtract(a->position, b->position);
-                    Vector2 normal = Vector2Normalize(direction);
+    for(size_t i = 0; i < ball_count; i++){
+        Ball* a = &balls[i];
+        // collision with other balls
+        for(size_t j = i + 1; j < ball_count; j++){
+            Ball* b = &balls[j];
+            if(collision(a, b)){
+                Vector2 direction = Vector2Subtract(a->position, b->position);
+                float len = Vector2Length(direction);
+                Vector2 normal = Vector2Normalize(direction);
 
-                    //https://en.wikipedia.org/wiki/Elastic_collision#Two-dimensional
-                    // if(!collision_passsed){
-                        a->velocity = calculate_velocity_after_collision(a, b);
-                        b->velocity = calculate_velocity_after_collision(b, a);
-                    // }
-                    a->position = Vector2Add(b->position,
-                            (Vector2){
-                                .x = normal.x * b->radius + normal.x * a->radius * 1.1,
-                                .y = normal.y * b->radius + normal.y * a->radius * 1.1,
-                            });
-                    // collisions_happened = true;
-                }
+                a->acceleration = Vector2Add(a->acceleration, (Vector2){
+                        .x = normal.x * ( len / a->radius ),
+                        .y = normal.y * ( len / a->radius ),
+                        });
+                b->acceleration = Vector2Add(b->acceleration, (Vector2){
+                        .x = -normal.x * ( len / b->radius ),
+                        .y = -normal.y * ( len / b->radius ),
+                        });
+                // a->acceleration = Vector2Add(a->acceleration, (Vector2){
+                //         .x = normal.x * delta_t,
+                //         .y = normal.y * delta_t,
+                //         });
+                // b->acceleration = Vector2Add(b->acceleration, (Vector2){
+                //         .x = -normal.x * delta_t,
+                //         .y = -normal.y * delta_t,
+                //         });
+
+                //https://en.wikipedia.org/wiki/Elastic_collision#Two-dimensional
+                a->velocity = calculate_velocity_after_collision(a, b);
+                b->velocity = calculate_velocity_after_collision(b, a);
             }
-            check_edge(a);
         }
-        // collision_passsed = true;
-    // } while(collisions_happened);
+        check_edge(a);
+    }
     for(size_t i = 0; i < ball_count; i++){
         Ball* ball = &balls[i];
-        ball->velocity = (Vector2){
-            .x = ball->velocity.x,
-            .y = ball->velocity.y + GRAVITY * delta_t
+        ball->acceleration = (Vector2){
+            .x = ball->acceleration.x,
+            .y = ball->acceleration.y + GRAVITY * delta_t
         };
+        ball->velocity = Vector2Add(ball->velocity, ball->acceleration);
+        ball->acceleration = (Vector2){ 0, 0 };
         ball->position = Vector2Add(ball->position, ball->velocity);
     }
 }
