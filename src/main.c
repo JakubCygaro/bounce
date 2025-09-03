@@ -29,6 +29,7 @@ static double delta_t = 0;
 static double current_frame_time = 0;
 static double last_frame_time = 0;
 static float ball_radius = 5.0;
+static Sound bounce_sound;
 
 bool collision(Ball* a, Ball* b){
     double dist = sqrt(pow(a->position.x - b->position.x, 2.0) + pow(a->position.y - b->position.y, 2.0));
@@ -139,9 +140,17 @@ void update() {
                 //https://en.wikipedia.org/wiki/Elastic_collision#Two-dimensional
                 a->velocity = calculate_velocity_after_collision(a, b);
                 b->velocity = calculate_velocity_after_collision(b, a);
+
+                PlaySound(bounce_sound);
             }
         }
-        check_edge(a);
+        if(check_edge(a)){
+            // float m = Vector2Length(a->velocity);
+            // float dot = Vector2DotProduct(a->velocity, (Vector2){ 1.0, 0.0 });
+            // dot = dot < 0 ? -dot : dot;
+            // if(m > 0.5 && dot < 0.7)
+            //     PlaySound(bounce_sound);
+        }
     }
     for(size_t i = 0; i < ball_count; i++){
         Ball* ball = &balls[i];
@@ -178,8 +187,9 @@ void update_draw_frame(){
 
 int main(void) {
     InitWindow(SRC_WIDTH, SRC_HEIGHT, "Bounce");
-    balls[ball_count++] = ball_new(10, RED, (Vector2){ 100, 100 });
+    InitAudioDevice();
     SetTargetFPS(TARGET_FPS);
+    bounce_sound = LoadSound("resources/qubodup-cfork-ccby3-jump.ogg");
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(update_draw_frame, 0, 1);
 #else
@@ -187,6 +197,8 @@ int main(void) {
         update_draw_frame();
     }
 #endif
+    UnloadSound(bounce_sound);
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
